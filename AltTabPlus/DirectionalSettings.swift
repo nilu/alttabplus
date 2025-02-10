@@ -43,12 +43,29 @@ struct DirectionalSettings: Codable {
     struct AppMapping: Codable {
         let bundleIdentifier: String
         let name: String
+        private let iconData: Data?  // Add this to store the icon
+        
+        var icon: NSImage? {
+            guard let data = iconData else { return nil }
+            return NSImage(data: data)
+        }
         
         init?(app: NSRunningApplication) {
             guard let bundleIdentifier = app.bundleIdentifier,
                   let name = app.localizedName else { return nil }
+            
             self.bundleIdentifier = bundleIdentifier
             self.name = name
+            
+            // Store the app's icon data
+            if let appIcon = app.icon {
+                self.iconData = appIcon.tiffRepresentation
+            } else if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleIdentifier) {
+                let icon = NSWorkspace.shared.icon(forFile: appURL.path)
+                self.iconData = icon.tiffRepresentation
+            } else {
+                self.iconData = nil
+            }
         }
     }
     

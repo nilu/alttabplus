@@ -139,7 +139,14 @@ class SettingsWindow: NSWindow {
             return
         }
         
-        // If app isn't running, try to get icon from the app bundle
+        // Then try to use our stored icon
+        if let icon = mapping.icon {
+            button.image = icon
+            button.imagePosition = .imageOnly
+            return
+        }
+        
+        // If no icon found, try to get it from the app bundle
         if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: mapping.bundleIdentifier) {
             let icon = NSWorkspace.shared.icon(forFile: appURL.path)
             button.image = icon
@@ -147,7 +154,7 @@ class SettingsWindow: NSWindow {
             return
         }
         
-        // If no icon found, show the direction text
+        // If all else fails, show the direction text
         button.image = nil
         button.imagePosition = .noImage
         button.title = direction.rawValue
