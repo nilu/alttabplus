@@ -1,7 +1,15 @@
 import Cocoa
 
 class WindowManager {
-    private var windows: [CGWindowID: NSRunningApplication] = [:]
+    private var windows: [CGWindowID: WindowInfo] = [:]
+    private var currentMouseLocation: NSPoint?
+    private var settings = DirectionalSettings.load()
+    
+    struct WindowInfo {
+        let app: NSRunningApplication
+        let frame: CGRect
+        let title: String?
+    }
     
     init() {
         updateWindowList()
@@ -17,16 +25,30 @@ class WindowManager {
             guard let windowID = window[kCGWindowNumber as String] as? CGWindowID,
                   let pid = window[kCGWindowOwnerPID as String] as? pid_t,
                   let app = NSRunningApplication(processIdentifier: pid),
+                  let bounds = window[kCGWindowBounds as String] as? [String: CGFloat],
                   window[kCGWindowLayer as String] as? Int == 0
             else { continue }
             
-            windows[windowID] = app
+            let frame = CGRect(x: bounds["X"] ?? 0,
+                             y: bounds["Y"] ?? 0,
+                             width: bounds["Width"] ?? 0,
+                             height: bounds["Height"] ?? 0)
+            
+            let title = window[kCGWindowName as String] as? String
+            
+            windows[windowID] = WindowInfo(app: app, frame: frame, title: title)
         }
+        
+        print("Found \(windows.count) windows")
     }
     
     func switchToWindow(at angle: Double) {
-        updateWindowList()
+        let direction = DirectionalSettings.Direction.from(angle: angle)
         
-        // TODO: Implement window selection based on angle
+        guard let mapping = settings.mappings[direction],
+              let app = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == mapping.bundleIdentifier })
+        else { return }
+        
+        app.activate(options: NSApplication.ActivationOptions.activateIgnoringOtherApps)
     }
 } 

@@ -78,6 +78,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupStatusMenu() {
         let menu = NSMenu()
         
+        menu.addItem(NSMenuItem(title: "Settings", action: #selector(showSettings), keyEquivalent: ","))
         menu.addItem(NSMenuItem(title: "About AltTabPlus", action: #selector(showAbout), keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
@@ -87,5 +88,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     @objc private func showAbout() {
         NSApp.orderFrontStandardAboutPanel(nil)
+    }
+    
+    @objc private func showSettings() {
+        let window = SettingsWindow()
+        window.center()
+        window.makeKeyAndOrderFront(nil)
     }
 } 
