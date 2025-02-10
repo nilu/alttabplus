@@ -28,5 +28,9 @@
 	<string>NSApplication</string>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>AltTabPlus needs accessibility permissions to switch between windows.</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2025 Pandey Labs Inc. All rights reserved.</string>
+	<key>CFBundleGetInfoString</key>
+	<string>AltTabPlus by Nilesh Pandey</string>
 </dict>
 </plist>

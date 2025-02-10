@@ -64,6 +64,17 @@ class SettingsWindow: NSWindow {
             button.title = direction.rawValue
             button.target = self
             button.action = #selector(directionClicked(_:))
+            button.sendAction(on: .leftMouseUp)
+            
+            // Add right-click menu
+            let menu = NSMenu()
+            menu.addItem(NSMenuItem(title: "Unbind", action: #selector(unbindDirection(_:)), keyEquivalent: ""))
+            button.menu = menu
+            
+            // Store the direction in the menu item's represented object
+            if let menuItem = menu.items.first {
+                menuItem.representedObject = direction
+            }
             
             if let mapping = settings.mappings[direction] {
                 updateButtonAppearance(button, with: mapping)
@@ -135,6 +146,20 @@ class SettingsWindow: NSWindow {
         panel.allowedContentTypes = [.application]
         panel.allowsMultipleSelection = false
         
+        // Position panel relative to screen
+        let screenFrame = NSScreen.main?.frame ?? .zero
+        panel.setFrameOrigin(NSPoint(
+            x: screenFrame.midX - panel.frame.width/2,
+            y: screenFrame.midY - panel.frame.height/2
+        ))
+        
+        // Set panel level higher than settings window
+        panel.level = .popUpMenu  // This is higher than .floating
+        
+        // Show panel
+        panel.orderFrontRegardless()  // Changed from self.orderFrontRegardless()
+        NSApp.activate(ignoringOtherApps: true)
+        
         panel.begin { [weak self] response in
             guard response == .OK,
                   let url = panel.url,
@@ -143,7 +168,21 @@ class SettingsWindow: NSWindow {
             else { return }
             
             self?.settings.mappings[direction] = mapping
-            self?.refreshAllButtonAppearances()  // Refresh all buttons
+            self?.refreshAllButtonAppearances()
+        }
+    }
+    
+    @objc private func unbindDirection(_ sender: NSMenuItem) {
+        guard let direction = sender.representedObject as? DirectionalSettings.Direction else { return }
+        
+        // Remove the mapping
+        settings.mappings.removeValue(forKey: direction)
+        
+        // Reset button appearance
+        if let button = directionButtons[direction] {
+            button.image = nil
+            button.imagePosition = .noImage
+            button.title = direction.rawValue
         }
     }
     

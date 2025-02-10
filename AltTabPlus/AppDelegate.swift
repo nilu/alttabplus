@@ -94,7 +94,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate {
     }
     
     @objc private func showAbout() {
-        NSApp.orderFrontStandardAboutPanel(nil)
+        AboutWindow.showAbout()
     }
     
     @objc private func showSettings() {
