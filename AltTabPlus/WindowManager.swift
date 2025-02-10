@@ -3,7 +3,7 @@ import Cocoa
 class WindowManager {
     private var windows: [CGWindowID: WindowInfo] = [:]
     private var currentMouseLocation: NSPoint?
-    let settings = DirectionalSettings.load()
+    private(set) var settings: DirectionalSettings
     
     struct WindowInfo {
         let app: NSRunningApplication
@@ -12,6 +12,7 @@ class WindowManager {
     }
     
     init() {
+        self.settings = DirectionalSettings.load()
         updateWindowList()
     }
     
@@ -49,6 +50,14 @@ class WindowManager {
               let app = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == mapping.bundleIdentifier })
         else { return }
         
-        app.activate(options: NSApplication.ActivationOptions.activateIgnoringOtherApps)
+        if #available(macOS 14.0, *) {
+            app.activate()
+        } else {
+            app.activate(options: .activateIgnoringOtherApps)
+        }
+    }
+    
+    func updateSettings(_ newSettings: DirectionalSettings) {
+        settings = newSettings
     }
 } 

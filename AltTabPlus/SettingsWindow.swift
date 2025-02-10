@@ -1,18 +1,44 @@
 import Cocoa
 
+protocol SettingsWindowDelegate: AnyObject {
+    func settingsDidUpdate(_ settings: DirectionalSettings)
+}
+
 class SettingsWindow: NSWindow {
-    private var settings = DirectionalSettings.load()
+    private var settings: DirectionalSettings
     private var directionButtons: [DirectionalSettings.Direction: NSButton] = [:]
+    private var originalSettings: DirectionalSettings
+    private var isClosing = false
+    weak var settingsDelegate: SettingsWindowDelegate?
+    static var shared: SettingsWindow?
     
-    init() {
+    static func showSettings(with settings: DirectionalSettings, delegate: SettingsWindowDelegate?) {
+        if let existing = shared {
+            existing.makeKeyAndOrderFront(nil)
+        } else {
+            shared = SettingsWindow(settings: settings)
+            shared?.settingsDelegate = delegate
+            shared?.center()
+            shared?.makeKeyAndOrderFront(nil)
+        }
+    }
+    
+    private init(settings: DirectionalSettings) {
+        self.settings = settings.copy()
+        self.originalSettings = settings.copy()
+        
+        let windowRect = NSRect(x: 0, y: 0, width: 400, height: 450)
+        
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 400, height: 400),
+            contentRect: windowRect,
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
         )
         
         title = "AltTabPlus Settings"
+        isReleasedWhenClosed = false
+        delegate = self
         setupUI()
     }
     
@@ -20,7 +46,7 @@ class SettingsWindow: NSWindow {
         let contentView = NSView(frame: frame)
         
         // Create direction buttons in a circle
-        let center = NSPoint(x: frame.width/2, y: frame.height/2)
+        let center = NSPoint(x: frame.width/2, y: frame.height/2 + 25)
         let radius: CGFloat = 100
         
         for direction in DirectionalSettings.Direction.allCases {
@@ -29,7 +55,7 @@ class SettingsWindow: NSWindow {
             let y = center.y + radius * sin(angle)
             
             let button = NSButton(frame: NSRect(x: x-25, y: y-25, width: 50, height: 50))
-            button.bezelStyle = .regularSquare
+            button.bezelStyle = NSButton.BezelStyle.regularSquare
             button.title = direction.rawValue
             button.target = self
             button.action = #selector(directionClicked(_:))
@@ -42,6 +68,36 @@ class SettingsWindow: NSWindow {
             directionButtons[direction] = button
         }
         
+        // Add Save and Cancel buttons at the bottom
+        let buttonWidth: CGFloat = 100
+        let buttonHeight: CGFloat = 32
+        let buttonSpacing: CGFloat = 20
+        let bottomMargin: CGFloat = 20
+        
+        let saveButton = NSButton(frame: NSRect(
+            x: frame.width/2 - buttonWidth - buttonSpacing/2,
+            y: bottomMargin,
+            width: buttonWidth,
+            height: buttonHeight
+        ))
+        saveButton.title = "Save"
+        saveButton.bezelStyle = NSButton.BezelStyle.rounded
+        saveButton.target = self
+        saveButton.action = #selector(saveSettings)
+        contentView.addSubview(saveButton)
+        
+        let cancelButton = NSButton(frame: NSRect(
+            x: frame.width/2 + buttonSpacing/2,
+            y: bottomMargin,
+            width: buttonWidth,
+            height: buttonHeight
+        ))
+        cancelButton.title = "Cancel"
+        cancelButton.bezelStyle = NSButton.BezelStyle.rounded
+        cancelButton.target = self
+        cancelButton.action = #selector(cancelSettings)
+        contentView.addSubview(cancelButton)
+        
         contentView.wantsLayer = true
         self.contentView = contentView
     }
@@ -51,6 +107,19 @@ class SettingsWindow: NSWindow {
            let icon = app.icon {
             button.image = icon
             button.imagePosition = .imageOnly
+        }
+    }
+    
+    private func refreshAllButtonAppearances() {
+        for (direction, button) in directionButtons {
+            if let mapping = settings.mappings[direction] {
+                updateButtonAppearance(button, with: mapping)
+            } else {
+                // Reset button to default appearance if no mapping exists
+                button.image = nil
+                button.imagePosition = .noImage
+                button.title = direction.rawValue
+            }
         }
     }
     
@@ -69,8 +138,43 @@ class SettingsWindow: NSWindow {
             else { return }
             
             self?.settings.mappings[direction] = mapping
-            self?.settings.save()
-            self?.updateButtonAppearance(sender, with: mapping)
+            self?.refreshAllButtonAppearances()  // Refresh all buttons
+        }
+    }
+    
+    @objc private func saveSettings() {
+        if isClosing { return }
+        isClosing = true
+        settings.save()
+        settingsDelegate?.settingsDidUpdate(settings)
+        refreshAllButtonAppearances()  // Refresh all buttons
+        SettingsWindow.shared = nil
+        close()
+    }
+    
+    @objc private func cancelSettings() {
+        if isClosing { return }
+        isClosing = true
+        settings = originalSettings.copy()
+        refreshAllButtonAppearances()  // Refresh all buttons
+        SettingsWindow.shared = nil
+        close()
+    }
+    
+    override func close() {
+        if !isClosing {
+            cancelSettings()
+            return
+        }
+        super.close()
+        SettingsWindow.shared = nil
+    }
+}
+
+extension SettingsWindow: NSWindowDelegate {
+    func windowWillClose(_ notification: Notification) {
+        if !isClosing {
+            cancelSettings()
         }
     }
 } 

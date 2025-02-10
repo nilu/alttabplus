@@ -1,6 +1,6 @@
 import Cocoa
 
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate {
     private var statusItem: NSStatusItem?
     private var windowManager: WindowManager?
     private var mouseTracker: MouseTracker?
@@ -91,8 +91,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     @objc private func showSettings() {
-        let window = SettingsWindow()
-        window.center()
-        window.makeKeyAndOrderFront(nil)
+        SettingsWindow.showSettings(with: windowManager!.settings, delegate: self)
+    }
+    
+    func settingsDidUpdate(_ settings: DirectionalSettings) {
+        windowManager?.updateSettings(settings)
     }
 } 

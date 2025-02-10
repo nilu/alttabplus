@@ -63,6 +63,12 @@ struct DirectionalSettings: Codable {
     func save() {
         if let data = try? JSONEncoder().encode(self) {
             UserDefaults.standard.set(data, forKey: "DirectionalSettings")
+            UserDefaults.standard.synchronize()  // Force save immediately
         }
+    }
+    
+    func copy() -> DirectionalSettings {
+        let mappingsCopy = self.mappings
+        return DirectionalSettings(mappings: mappingsCopy)
     }
 } 
