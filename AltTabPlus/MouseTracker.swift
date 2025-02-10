@@ -40,6 +40,7 @@ class MouseTracker {
             if event.modifierFlags.contains(.option) {
                 startTracking()
                 overlay.show()
+                overlay.updateAllIcons()
             } else {
                 stopTracking()
                 overlay.hide()

@@ -3,6 +3,7 @@ import Cocoa
 class DirectionalOverlay: NSWindow {
     private var settings: DirectionalSettings
     private var selectedDirection: DirectionalSettings.Direction?
+    private var directionViews: [DirectionalSettings.Direction: NSImageView] = [:]
     
     init(settings: DirectionalSettings) {
         self.settings = settings
@@ -25,13 +26,34 @@ class DirectionalOverlay: NSWindow {
         ignoresMouseEvents = true
         
         // Set up the content view
-        contentView = DirectionalOverlayView(settings: settings)
+        let overlayView = DirectionalOverlayView(settings: settings)
+        contentView = overlayView
+        
+        // Create image views for each direction
+        setupDirectionViews(in: overlayView)
+    }
+    
+    private func setupDirectionViews(in overlayView: DirectionalOverlayView) {
+        let center = NSPoint(x: overlayView.bounds.midX, y: overlayView.bounds.midY)
+        let radius: CGFloat = 100
+        
+        for direction in DirectionalSettings.Direction.allCases {
+            let angle = direction.angle * .pi / 180
+            let x = center.x + radius * cos(CGFloat(angle))
+            let y = center.y + radius * sin(CGFloat(angle))
+            
+            let imageView = NSImageView(frame: NSRect(x: x - 25, y: y - 25, width: 50, height: 50))
+            imageView.imageScaling = .scaleProportionallyUpOrDown
+            overlayView.addSubview(imageView)
+            directionViews[direction] = imageView
+        }
     }
     
     func show() {
         orderFront(nil)
         selectedDirection = nil
         updateSelection(nil)
+        updateAllIcons()
     }
     
     func hide() {
@@ -58,6 +80,32 @@ class DirectionalOverlay: NSWindow {
             contentView.needsDisplay = true
         }
     }
+    
+    func updateAllIcons() {
+        for direction in DirectionalSettings.Direction.allCases {
+            if let mapping = settings.mappings[direction] {
+                // Update the icon for this direction
+                updateDirectionIcon(direction)
+            }
+        }
+    }
+    
+    private func updateDirectionIcon(_ direction: DirectionalSettings.Direction) {
+        guard let directionView = directionViews[direction] else { return }
+        
+        if let mapping = settings.mappings[direction] {
+            // Try to get icon from running app first
+            if let app = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == mapping.bundleIdentifier }),
+               let icon = app.icon {
+                directionView.image = icon
+            } else if let icon = mapping.icon {
+                // Use stored icon if app isn't running
+                directionView.image = icon
+            }
+        } else {
+            directionView.image = nil
+        }
+    }
 }
 
 class DirectionalOverlayView: NSView {
@@ -82,7 +130,7 @@ class DirectionalOverlayView: NSView {
         let radius: CGFloat = 100
         let selectedRadius: CGFloat = 120
         
-        // Draw the wheel segments
+        // Draw only the wheel segments backgrounds
         for direction in DirectionalSettings.Direction.allCases {
             let angle = direction.angle * .pi / 180
             let isSelected = direction == selectedDirection
@@ -102,13 +150,6 @@ class DirectionalOverlayView: NSView {
                 NSColor.black.withAlphaComponent(0.5).setFill()
             }
             bgPath.fill()
-            
-            // Draw app icon if mapped
-            if let mapping = settings.mappings[direction],
-               let app = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == mapping.bundleIdentifier }),
-               let icon = app.icon {
-                icon.draw(in: segmentRect)
-            }
         }
     }
     
