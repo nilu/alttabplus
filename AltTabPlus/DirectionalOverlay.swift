@@ -1,11 +1,12 @@
 import Cocoa
 
 class DirectionalOverlay: NSWindow {
-    private let settings: DirectionalSettings
+    private var settings: DirectionalSettings
     private var selectedDirection: DirectionalSettings.Direction?
     
     init(settings: DirectionalSettings) {
         self.settings = settings
+        self.selectedDirection = nil
         
         // Create window spanning the entire screen
         let screen = NSScreen.main ?? NSScreen.screens[0]
@@ -49,10 +50,18 @@ class DirectionalOverlay: NSWindow {
         contentView.selectedDirection = selectedDirection
         contentView.needsDisplay = true
     }
+    
+    func updateSettings(_ newSettings: DirectionalSettings) {
+        self.settings = newSettings
+        if let contentView = contentView as? DirectionalOverlayView {
+            contentView.updateSettings(newSettings)
+            contentView.needsDisplay = true
+        }
+    }
 }
 
 class DirectionalOverlayView: NSView {
-    private let settings: DirectionalSettings
+    private var settings: DirectionalSettings
     var selectedDirection: DirectionalSettings.Direction?
     
     init(settings: DirectionalSettings) {
@@ -101,5 +110,9 @@ class DirectionalOverlayView: NSView {
                 icon.draw(in: segmentRect)
             }
         }
+    }
+    
+    func updateSettings(_ newSettings: DirectionalSettings) {
+        self.settings = newSettings
     }
 } 

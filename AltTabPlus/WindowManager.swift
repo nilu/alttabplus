@@ -59,5 +59,9 @@ class WindowManager {
     
     func updateSettings(_ newSettings: DirectionalSettings) {
         settings = newSettings
+        NotificationCenter.default.post(
+            name: NSNotification.Name("SettingsDidChange"),
+            object: newSettings
+        )
     }
 } 

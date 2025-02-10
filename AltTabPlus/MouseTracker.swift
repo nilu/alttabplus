@@ -11,6 +11,20 @@ class MouseTracker {
         self.windowManager = windowManager
         self.overlay = DirectionalOverlay(settings: windowManager.settings)
         setupEventMonitor()
+        
+        // Add observer for settings changes
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(settingsDidChange(_:)),
+            name: NSNotification.Name("SettingsDidChange"),
+            object: nil
+        )
+    }
+    
+    @objc private func settingsDidChange(_ notification: Notification) {
+        if let newSettings = notification.object as? DirectionalSettings {
+            overlay.updateSettings(newSettings)
+        }
     }
     
     private func setupEventMonitor() {
