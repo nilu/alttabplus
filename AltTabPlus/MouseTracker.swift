@@ -55,7 +55,7 @@ class MouseTracker {
                 let current = event.locationInWindow
                 let angle = calculateAngle(from: start, to: current)
                 overlay.updateSelection(angle)
-                windowManager.switchToWindow(at: angle)
+                windowManager.switchToApp(for: DirectionalSettings.Direction.from(angle: angle))
             }
             
         case .leftMouseUp:

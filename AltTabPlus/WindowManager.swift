@@ -43,37 +43,49 @@ class WindowManager {
         print("Found \(windows.count) windows")
     }
     
-    private func launchAppIfNeeded(_ bundleId: String) -> NSRunningApplication? {
+    private func launchAppIfNeeded(_ bundleId: String?) -> NSRunningApplication? {
+        // Check if we have a valid bundle ID
+        guard let bundleId = bundleId else { return nil }
+        
         // Check if app is already running
         if let runningApp = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == bundleId }) {
             return runningApp
         }
         
-        // If not running, try to launch it
-        do {
-            let config = NSWorkspace.OpenConfiguration()
-            config.activates = true
-            
-            let runningApp = try NSWorkspace.shared.openApplication(
-                withBundleIdentifier: bundleId,
-                configuration: config
-            )
-            return runningApp
-        } catch {
-            print("Failed to launch app with bundle ID \(bundleId): \(error)")
+        // Get the app URL from bundle ID
+        guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) else {
+            print("Could not find app with bundle ID: \(bundleId)")
             return nil
         }
+        
+        // Launch the app
+        let options: NSWorkspace.LaunchOptions = [.default, .withoutActivation]
+        var launchedApp: NSRunningApplication?
+        
+        do {
+            launchedApp = try NSWorkspace.shared.launchApplication(
+                at: appURL,
+                options: options,
+                configuration: [:]
+            )
+        } catch {
+            print("Failed to launch app: \(error)")
+            return nil
+        }
+        
+        // Activate the app if launch was successful
+        launchedApp?.activate(options: .activateIgnoringOtherApps)
+        return launchedApp
     }
     
     func switchToApp(for direction: DirectionalSettings.Direction) {
-        guard let mapping = settings.mappings[direction],
-              let bundleId = mapping.bundleIdentifier else {
-            return
-        }
+        guard let mapping = settings.mappings[direction] else { return }
         
         // Try to launch app if it's not running
-        if let app = launchAppIfNeeded(bundleId) {
+        if let app = launchAppIfNeeded(mapping.bundleIdentifier) {
             app.activate(options: .activateIgnoringOtherApps)
+        } else {
+            print("Failed to launch or activate app with bundle ID: \(mapping.bundleIdentifier ?? "unknown")")
         }
     }
     

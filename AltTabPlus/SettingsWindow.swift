@@ -78,7 +78,7 @@ class SettingsWindow: NSWindow {
             }
             
             if let mapping = settings.mappings[direction] {
-                updateButtonAppearance(button, with: mapping)
+                updateButtonAppearance(button, with: mapping, direction: direction)
             }
             
             contentView.addSubview(button)
@@ -130,18 +130,33 @@ class SettingsWindow: NSWindow {
         self.contentView = contentView
     }
     
-    private func updateButtonAppearance(_ button: NSButton, with mapping: DirectionalSettings.AppMapping) {
+    private func updateButtonAppearance(_ button: NSButton, with mapping: DirectionalSettings.AppMapping, direction: DirectionalSettings.Direction) {
+        // First try to get icon from running app
         if let app = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == mapping.bundleIdentifier }),
            let icon = app.icon {
             button.image = icon
             button.imagePosition = .imageOnly
+            return
         }
+        
+        // If app isn't running, try to get icon from the app bundle
+        if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: mapping.bundleIdentifier) {
+            let icon = NSWorkspace.shared.icon(forFile: appURL.path)
+            button.image = icon
+            button.imagePosition = .imageOnly
+            return
+        }
+        
+        // If no icon found, show the direction text
+        button.image = nil
+        button.imagePosition = .noImage
+        button.title = direction.rawValue
     }
     
     private func refreshAllButtonAppearances() {
         for (direction, button) in directionButtons {
             if let mapping = settings.mappings[direction] {
-                updateButtonAppearance(button, with: mapping)
+                updateButtonAppearance(button, with: mapping, direction: direction)
             } else {
                 // Reset button to default appearance if no mapping exists
                 button.image = nil
@@ -186,11 +201,11 @@ class SettingsWindow: NSWindow {
         // Create a new mapping if we have a bundle ID
         if let bundleId = bundleId,
            let app = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == bundleId }) {
-            settings.mappings[direction] = .init(app: app)  // Use the app-based initializer
+            settings.mappings[direction] = .init(app: app)
             
             // Update button appearance
             if let button = directionButtons[direction] {
-                updateButtonAppearance(button, with: settings.mappings[direction]!)
+                updateButtonAppearance(button, with: settings.mappings[direction]!, direction: direction)
             }
         }
     }
