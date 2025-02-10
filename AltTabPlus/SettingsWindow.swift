@@ -154,33 +154,44 @@ class SettingsWindow: NSWindow {
     @objc private func directionClicked(_ sender: NSButton) {
         guard let direction = directionButtons.first(where: { $0.value == sender })?.key else { return }
         
-        let panel = NSOpenPanel()
-        panel.allowedContentTypes = [.application]
-        panel.allowsMultipleSelection = false
+        selectApp(for: direction)
+    }
+    
+    private func selectApp(for direction: DirectionalSettings.Direction) {
+        let runningApps = NSWorkspace.shared.runningApplications
+            .filter { $0.activationPolicy == .regular }  // Only show regular apps
+            .sorted { $0.localizedName ?? "" < $1.localizedName ?? "" }
         
-        // Position panel relative to screen
-        let screenFrame = NSScreen.main?.frame ?? .zero
-        panel.setFrameOrigin(NSPoint(
-            x: screenFrame.midX - panel.frame.width/2,
-            y: screenFrame.midY - panel.frame.height/2
-        ))
+        let menu = NSMenu()
+        menu.autoenablesItems = false
         
-        // Set panel level higher than settings window
-        panel.level = .popUpMenu  // This is higher than .floating
+        for app in runningApps {
+            if let appName = app.localizedName {
+                let item = NSMenuItem(title: appName, action: #selector(appSelected(_:)), keyEquivalent: "")
+                item.target = self
+                item.isEnabled = true
+                item.representedObject = (app.bundleIdentifier, direction)
+                menu.addItem(item)
+            }
+        }
         
-        // Show panel
-        panel.orderFrontRegardless()  // Changed from self.orderFrontRegardless()
-        NSApp.activate(ignoringOtherApps: true)
+        if let button = directionButtons[direction] {
+            NSMenu.popUpContextMenu(menu, with: NSApp.currentEvent!, for: button)
+        }
+    }
+    
+    @objc private func appSelected(_ sender: NSMenuItem) {
+        guard let (bundleId, direction) = sender.representedObject as? (String?, DirectionalSettings.Direction) else { return }
         
-        panel.begin { [weak self] response in
-            guard response == .OK,
-                  let url = panel.url,
-                  let app = NSWorkspace.shared.runningApplications.first(where: { $0.bundleURL == url }),
-                  let mapping = DirectionalSettings.AppMapping(app: app)
-            else { return }
+        // Create a new mapping if we have a bundle ID
+        if let bundleId = bundleId,
+           let app = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == bundleId }) {
+            settings.mappings[direction] = .init(app: app)  // Use the app-based initializer
             
-            self?.settings.mappings[direction] = mapping
-            self?.refreshAllButtonAppearances()
+            // Update button appearance
+            if let button = directionButtons[direction] {
+                updateButtonAppearance(button, with: settings.mappings[direction]!)
+            }
         }
     }
     
