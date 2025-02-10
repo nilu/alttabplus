@@ -31,6 +31,9 @@ class DirectionalOverlay: NSWindow {
         
         // Create image views for each direction
         setupDirectionViews(in: overlayView)
+        
+        // Load all icons immediately
+        updateAllIcons()
     }
     
     private func setupDirectionViews(in overlayView: DirectionalOverlayView) {
@@ -78,6 +81,7 @@ class DirectionalOverlay: NSWindow {
         if let contentView = contentView as? DirectionalOverlayView {
             contentView.updateSettings(newSettings)
             contentView.needsDisplay = true
+            updateAllIcons()
         }
     }
     
@@ -130,7 +134,7 @@ class DirectionalOverlayView: NSView {
         let radius: CGFloat = 100
         let selectedRadius: CGFloat = 120
         
-        // Draw only the wheel segments backgrounds
+        // Draw the wheel segments
         for direction in DirectionalSettings.Direction.allCases {
             let angle = direction.angle * .pi / 180
             let isSelected = direction == selectedDirection
@@ -150,6 +154,16 @@ class DirectionalOverlayView: NSView {
                 NSColor.black.withAlphaComponent(0.5).setFill()
             }
             bgPath.fill()
+            
+            // Draw app icon if mapped
+            if let mapping = settings.mappings[direction] {
+                if let app = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == mapping.bundleIdentifier }),
+                   let icon = app.icon {
+                    icon.draw(in: segmentRect)
+                } else if let icon = mapping.icon {
+                    icon.draw(in: segmentRect)
+                }
+            }
         }
     }
     
