@@ -5,9 +5,11 @@ class MouseTracker {
     private var startPoint: NSPoint?
     private var isTracking = false
     private var eventMonitor: Any?
+    private let overlay: DirectionalOverlay
     
     init(windowManager: WindowManager) {
         self.windowManager = windowManager
+        self.overlay = DirectionalOverlay(settings: windowManager.settings)
         setupEventMonitor()
     }
     
@@ -23,8 +25,10 @@ class MouseTracker {
         case .flagsChanged:
             if event.modifierFlags.contains(.option) {
                 startTracking()
+                overlay.show()
             } else {
                 stopTracking()
+                overlay.hide()
             }
             
         case .leftMouseDown:
@@ -36,11 +40,13 @@ class MouseTracker {
             if let start = startPoint {
                 let current = event.locationInWindow
                 let angle = calculateAngle(from: start, to: current)
+                overlay.updateSelection(angle)
                 windowManager.switchToWindow(at: angle)
             }
             
         case .leftMouseUp:
             startPoint = nil
+            overlay.updateSelection(nil)
             
         default:
             break

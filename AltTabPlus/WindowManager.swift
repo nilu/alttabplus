@@ -3,7 +3,7 @@ import Cocoa
 class WindowManager {
     private var windows: [CGWindowID: WindowInfo] = [:]
     private var currentMouseLocation: NSPoint?
-    private var settings = DirectionalSettings.load()
+    let settings = DirectionalSettings.load()
     
     struct WindowInfo {
         let app: NSRunningApplication
