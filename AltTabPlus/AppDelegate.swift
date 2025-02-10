@@ -1,12 +1,13 @@
 import Cocoa
 
-@main
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var windowManager: WindowManager?
     private var mouseTracker: MouseTracker?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
+        print("App is launching...")
+        
         // Request accessibility permissions if needed
         requestAccessibilityPermissions()
         
@@ -16,6 +17,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Setup menu bar item
         setupStatusItem()
+        print("Menu bar item should be visible now")
     }
     
     private func requestAccessibilityPermissions() {
@@ -28,9 +30,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     private func setupStatusItem() {
+        print("Setting up status item...")
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         
         if let button = statusItem?.button {
+            print("Creating menu bar icon...")
             let image = NSImage(size: NSSize(width: 18, height: 18))
             image.isTemplate = true // For proper dark/light mode support
             
@@ -64,6 +68,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             image.unlockFocus()
             
             button.image = image
+        } else {
+            print("Failed to get status item button")
         }
         
         setupStatusMenu()
