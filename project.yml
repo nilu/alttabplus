@@ -1,0 +1,29 @@
+name: AltTabPlus
+options:
+  bundleIdPrefix: com.yourdomain
+  deploymentTarget:
+    macOS: 10.15
+  createIntermediateGroups: true
+
+targets:
+  AltTabPlus:
+    type: application
+    platform: macOS
+    sources: 
+      - AltTabPlus
+    settings:
+      base:
+        INFOPLIST_FILE: AltTabPlus/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.yourdomain.AltTabPlus
+        PRODUCT_NAME: AltTabPlus
+        MACOSX_DEPLOYMENT_TARGET: 10.15
+    info:
+      path: AltTabPlus/Info.plist
+      properties:
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        CFBundleName: AltTabPlus
+        CFBundlePackageType: APPL
+        CFBundleShortVersionString: 1.0.0
+        CFBundleVersion: 1
+        LSUIElement: true
+        NSHighResolutionCapable: true 
