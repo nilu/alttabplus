@@ -37,5 +37,7 @@
 		<key>com.yourdomain.AltTabPlus</key>
 		<string>identifier "com.yourdomain.AltTabPlus" and anchor apple generic</string>
 	</dict>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 </dict>
 </plist>
