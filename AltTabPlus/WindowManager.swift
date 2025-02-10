@@ -43,16 +43,36 @@ class WindowManager {
         print("Found \(windows.count) windows")
     }
     
-    func switchToWindow(at angle: Double) {
-        let direction = DirectionalSettings.Direction.from(angle: angle)
+    private func launchAppIfNeeded(_ bundleId: String) -> NSRunningApplication? {
+        // Check if app is already running
+        if let runningApp = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == bundleId }) {
+            return runningApp
+        }
         
+        // If not running, try to launch it
+        do {
+            let config = NSWorkspace.OpenConfiguration()
+            config.activates = true
+            
+            let runningApp = try NSWorkspace.shared.openApplication(
+                withBundleIdentifier: bundleId,
+                configuration: config
+            )
+            return runningApp
+        } catch {
+            print("Failed to launch app with bundle ID \(bundleId): \(error)")
+            return nil
+        }
+    }
+    
+    func switchToApp(for direction: DirectionalSettings.Direction) {
         guard let mapping = settings.mappings[direction],
-              let app = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == mapping.bundleIdentifier })
-        else { return }
+              let bundleId = mapping.bundleIdentifier else {
+            return
+        }
         
-        if #available(macOS 14.0, *) {
-            app.activate()
-        } else {
+        // Try to launch app if it's not running
+        if let app = launchAppIfNeeded(bundleId) {
             app.activate(options: .activateIgnoringOtherApps)
         }
     }
