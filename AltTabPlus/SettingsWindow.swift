@@ -14,12 +14,16 @@ class SettingsWindow: NSWindow {
     
     static func showSettings(with settings: DirectionalSettings, delegate: SettingsWindowDelegate?) {
         if let existing = shared {
+            existing.orderFrontRegardless()
             existing.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
         } else {
             shared = SettingsWindow(settings: settings)
             shared?.settingsDelegate = delegate
             shared?.center()
+            shared?.orderFrontRegardless()
             shared?.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
         }
     }
     
@@ -39,6 +43,7 @@ class SettingsWindow: NSWindow {
         title = "AltTabPlus Settings"
         isReleasedWhenClosed = false
         delegate = self
+        level = .floating
         setupUI()
     }
     

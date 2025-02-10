@@ -26,5 +26,7 @@
 	<true/>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>AltTabPlus needs accessibility permissions to switch between windows.</string>
 </dict>
 </plist>

@@ -21,6 +21,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, SettingsWindowDelegate {
     }
     
     private func requestAccessibilityPermissions() {
+        // First check without showing prompt
+        if AXIsProcessTrusted() {
+            print("Accessibility permissions already granted")
+            return
+        }
+        
+        // If not trusted, then show the prompt
         let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
         let trusted = AXIsProcessTrustedWithOptions(options as CFDictionary)
         
