@@ -11,6 +11,7 @@ class SettingsWindow: NSWindow {
     private var isClosing = false
     weak var settingsDelegate: SettingsWindowDelegate?
     static var shared: SettingsWindow?
+    private var launchAtLoginCheckbox: NSButton!
     
     static func showSettings(with settings: DirectionalSettings, delegate: SettingsWindowDelegate?) {
         if let existing = shared {
@@ -114,6 +115,17 @@ class SettingsWindow: NSWindow {
         cancelButton.action = #selector(cancelSettings)
         contentView.addSubview(cancelButton)
         
+        // Add Launch at Login checkbox
+        launchAtLoginCheckbox = NSButton(checkboxWithTitle: "Launch at Login", target: self, action: #selector(toggleLaunchAtLogin(_:)))
+        launchAtLoginCheckbox.state = LoginItemManager.shared.isLoginItemEnabled ? .on : .off
+        launchAtLoginCheckbox.frame = NSRect(
+            x: 20,
+            y: bottomMargin + buttonHeight + 20,
+            width: frame.width - 40,
+            height: 20
+        )
+        contentView.addSubview(launchAtLoginCheckbox)
+        
         contentView.wantsLayer = true
         self.contentView = contentView
     }
@@ -203,6 +215,10 @@ class SettingsWindow: NSWindow {
         refreshAllButtonAppearances()  // Refresh all buttons
         SettingsWindow.shared = nil
         close()
+    }
+    
+    @objc private func toggleLaunchAtLogin(_ sender: NSButton) {
+        LoginItemManager.shared.isLoginItemEnabled = (sender.state == .on)
     }
     
     override func close() {

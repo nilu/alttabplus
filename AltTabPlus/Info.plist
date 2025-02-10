@@ -32,5 +32,10 @@
 	<string>Copyright © 2025 Pandey Labs Inc. All rights reserved.</string>
 	<key>CFBundleGetInfoString</key>
 	<string>AltTabPlus by Nilesh Pandey</string>
+	<key>SMPrivilegedExecutables</key>
+	<dict>
+		<key>com.yourdomain.AltTabPlus</key>
+		<string>identifier "com.yourdomain.AltTabPlus" and anchor apple generic</string>
+	</dict>
 </dict>
 </plist>

@@ -34,3 +34,8 @@ targets:
         CFBundleVersion: 1
         LSUIElement: true
         NSHighResolutionCapable: true
+    entitlements:
+      path: AltTabPlus/AltTabPlus.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.automation.apple-events: true
