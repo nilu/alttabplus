@@ -82,39 +82,6 @@ class WindowManager {
         if let app = launchAppIfNeeded(mapping.bundleIdentifier) {
             print("Activating app: \(mapping.bundleIdentifier)")
             app.activate()
-            
-            // Special handling for Finder
-            if mapping.bundleIdentifier == "com.apple.finder" {
-                print("Found Finder, checking windows...")
-                
-                // Get all visible windows
-                let windowList = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as? [[String: Any]] ?? []
-                
-                // Just check for any Finder window that's not the desktop
-                let finderWindows = windowList.filter { window in
-                    guard let pid = window[kCGWindowOwnerPID as String] as? pid_t,
-                          let app = NSRunningApplication(processIdentifier: pid),
-                          app.bundleIdentifier == "com.apple.finder",
-                          let layer = window[kCGWindowLayer as String] as? Int,
-                          layer == 0,  // Normal window layer
-                          window[kCGWindowOwnerName as String] as? String == "Finder"  // Just check if it's a Finder window
-                    else { return false }
-                    return true
-                }
-                
-                let hasVisibleWindows = !finderWindows.isEmpty
-                print("🔍 DEBUG: Finder has visible windows: \(hasVisibleWindows)")
-                
-                if !hasVisibleWindows {
-                    print("No Finder windows found, creating one...")
-                    app.activate()
-                } else {
-                    print("Finder windows exist, just activating")
-                    app.activate()
-                }
-            } else {
-                app.activate()
-            }
         } else {
             print("Failed to launch or activate app with bundle ID: \(mapping.bundleIdentifier)")
         }
