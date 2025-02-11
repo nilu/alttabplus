@@ -47,7 +47,6 @@ class WindowManager {
     }
     
     private func launchAppIfNeeded(_ bundleId: String?) -> NSRunningApplication? {
-        // Check if we have a valid bundle ID
         guard let bundleId = bundleId else { return nil }
         
         // Check if app is already running
@@ -61,20 +60,17 @@ class WindowManager {
             return nil
         }
         
-        // Launch the app
-        let options: NSWorkspace.LaunchOptions = [.default, .withoutActivation]
+        // Launch the app using new API
         var launchedApp: NSRunningApplication?
+        let config = NSWorkspace.OpenConfiguration()
+        config.activates = false
         
-        do {
-            launchedApp = try NSWorkspace.shared.launchApplication(
-                at: appURL,
-                options: options,
-                configuration: [:]
-            )
-        } catch {
-            print("Failed to launch app: \(error)")
-            return nil
+        let semaphore = DispatchSemaphore(value: 0)
+        NSWorkspace.shared.openApplication(at: appURL, configuration: config) { app, error in
+            launchedApp = app
+            semaphore.signal()
         }
+        _ = semaphore.wait(timeout: .now() + 2)
         
         return launchedApp
     }
@@ -84,11 +80,12 @@ class WindowManager {
         
         // Try to launch app if it's not running
         if let app = launchAppIfNeeded(mapping.bundleIdentifier) {
-            print("🔍 DEBUG: Activating app: \(mapping.bundleIdentifier ?? "unknown")")
+            print("Activating app: \(mapping.bundleIdentifier)")
+            app.activate()
             
             // Special handling for Finder
             if mapping.bundleIdentifier == "com.apple.finder" {
-                print("🔍 DEBUG: Found Finder, checking windows...")
+                print("Found Finder, checking windows...")
                 
                 // Get all visible windows
                 let windowList = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as? [[String: Any]] ?? []
@@ -109,44 +106,17 @@ class WindowManager {
                 print("🔍 DEBUG: Finder has visible windows: \(hasVisibleWindows)")
                 
                 if !hasVisibleWindows {
-                    print("🔍 DEBUG: No Finder windows found, creating one...")
-                    // First activate Finder
-                    app.activate(options: .activateIgnoringOtherApps)
-                    // Then create a new window with Command+N
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        let source = CGEventSource(stateID: .combinedSessionState)
-                        
-                        // Create Command down event
-                        let flagsDown = CGEvent(keyboardEventSource: source, virtualKey: 0x37, keyDown: true)
-                        flagsDown?.flags = .maskCommand
-                        
-                        // Create 'n' key down event
-                        let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0x2D, keyDown: true)
-                        keyDown?.flags = .maskCommand
-                        
-                        // Create 'n' key up event
-                        let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0x2D, keyDown: false)
-                        keyUp?.flags = .maskCommand
-                        
-                        // Create Command up event
-                        let flagsUp = CGEvent(keyboardEventSource: source, virtualKey: 0x37, keyDown: false)
-                        
-                        // Post the events
-                        flagsDown?.post(tap: .cghidEventTap)
-                        keyDown?.post(tap: .cghidEventTap)
-                        keyUp?.post(tap: .cghidEventTap)
-                        flagsUp?.post(tap: .cghidEventTap)
-                    }
+                    print("No Finder windows found, creating one...")
+                    app.activate()
                 } else {
-                    print("🔍 DEBUG: Finder windows exist, just activating")
-                    app.activate(options: .activateIgnoringOtherApps)
+                    print("Finder windows exist, just activating")
+                    app.activate()
                 }
             } else {
-                // Normal app activation
-                app.activate(options: .activateIgnoringOtherApps)
+                app.activate()
             }
         } else {
-            print("Failed to launch or activate app with bundle ID: \(mapping.bundleIdentifier ?? "unknown")")
+            print("Failed to launch or activate app with bundle ID: \(mapping.bundleIdentifier)")
         }
     }
     

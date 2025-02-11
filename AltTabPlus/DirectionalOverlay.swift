@@ -87,8 +87,7 @@ class DirectionalOverlay: NSWindow {
     
     func updateAllIcons() {
         for direction in DirectionalSettings.Direction.allCases {
-            if let mapping = settings.mappings[direction] {
-                // Update the icon for this direction
+            if settings.mappings[direction] != nil {
                 updateDirectionIcon(direction)
             }
         }
