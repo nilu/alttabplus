@@ -27,7 +27,9 @@
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>AltTabPlus needs accessibility permissions to switch between windows.</string>
+	<string>AltTabPlus needs to control Finder to open new windows when needed.</string>
+	<key>NSSystemEventsUsageDescription</key>
+	<string>AltTabPlus needs to access System Events to manage Finder windows.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2025 Pandey Labs Inc. All rights reserved.</string>
 	<key>CFBundleGetInfoString</key>
