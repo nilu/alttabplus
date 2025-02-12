@@ -36,9 +36,9 @@ struct AboutView: View {
             
             Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0")")
             
-            Text("© 2024 Your Name")
+            Text("© 2025 Nilesh Pandey")
             
-            Link("View on GitHub", destination: URL(string: "https://github.com/yourusername/AltTabPlus")!)
+            Link("Visit nilesh.ai", destination: URL(string: "http://nilesh.ai")!)
         }
         .padding()
         .frame(width: 300, height: 200)
