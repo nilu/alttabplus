@@ -43,11 +43,19 @@ struct DirectionalSettings: Codable {
     struct AppMapping: Codable {
         let bundleIdentifier: String
         let name: String
-        private let iconData: Data?  // Add this to store the icon
+        private let iconHash: String?
         
+        // Make sure icon is not encoded
+        private enum CodingKeys: String, CodingKey {
+            case bundleIdentifier, name, iconHash
+        }
+        
+        // Computed property should not affect encoding
         var icon: NSImage? {
-            guard let data = iconData else { return nil }
-            return NSImage(data: data)
+            get {
+                guard let hash = iconHash else { return nil }
+                return IconCache.shared.getIcon(forHash: hash)
+            }
         }
         
         init?(app: NSRunningApplication) {
@@ -57,14 +65,14 @@ struct DirectionalSettings: Codable {
             self.bundleIdentifier = bundleIdentifier
             self.name = name
             
-            // Store the app's icon data
+            // Store icon in cache and save only the hash
             if let appIcon = app.icon {
-                self.iconData = appIcon.tiffRepresentation
+                self.iconHash = IconCache.shared.cacheIcon(appIcon)
             } else if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleIdentifier) {
                 let icon = NSWorkspace.shared.icon(forFile: appURL.path)
-                self.iconData = icon.tiffRepresentation
+                self.iconHash = IconCache.shared.cacheIcon(icon)
             } else {
-                self.iconData = nil
+                self.iconHash = nil
             }
         }
     }
@@ -79,8 +87,18 @@ struct DirectionalSettings: Codable {
     
     func save() {
         if let data = try? JSONEncoder().encode(self) {
+            print("Settings data size: \(data.count) bytes") // Debug print
+            if data.count >= 4_194_304 {
+                print("WARNING: Data size exceeds 4MB limit!")
+                // Print the mappings to see what's taking up space
+                mappings.forEach { direction, mapping in
+                    print("Direction: \(direction), App: \(mapping.name)")
+                }
+            }
             UserDefaults.standard.set(data, forKey: "DirectionalSettings")
-            UserDefaults.standard.synchronize()  // Force save immediately
+            UserDefaults.standard.synchronize()
+        } else {
+            print("Failed to encode settings")
         }
     }
     
