@@ -40,6 +40,20 @@ class MouseTracker {
             if event.modifierFlags.contains(.option) {
                 startTracking()
                 overlay.show()
+                
+                // Get the current mouse location and convert it properly
+                let mouseLocation = NSEvent.mouseLocation
+                
+                // Find the screen containing the mouse
+                if let currentScreen = NSScreen.screens.first(where: { NSMouseInRect(mouseLocation, $0.frame, false) }) {
+                    // Convert the absolute coordinate to window-relative coordinate
+                    let windowPoint = NSPoint(
+                        x: mouseLocation.x - overlay.frame.origin.x,
+                        y: currentScreen.frame.height - (mouseLocation.y - overlay.frame.origin.y)
+                    )
+                    overlay.updatePosition(to: windowPoint)
+                }
+                
                 overlay.updateAllIcons()
             } else {
                 stopTracking()

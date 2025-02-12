@@ -109,11 +109,27 @@ class DirectionalOverlay: NSWindow {
             directionView.image = nil
         }
     }
+    
+    func updatePosition(to mouseLocation: NSPoint) {
+        guard let overlayView = contentView as? DirectionalOverlayView else { return }
+        overlayView.centerPoint = mouseLocation
+        overlayView.needsDisplay = true
+        
+        // Update direction views positions
+        let radius: CGFloat = 100
+        for (direction, imageView) in directionViews {
+            let angle = direction.angle * .pi / 180
+            let x = mouseLocation.x + radius * cos(CGFloat(angle))
+            let y = mouseLocation.y + radius * sin(CGFloat(angle))
+            imageView.frame = NSRect(x: x - 25, y: y - 25, width: 50, height: 50)
+        }
+    }
 }
 
 class DirectionalOverlayView: NSView {
     private var settings: DirectionalSettings
     var selectedDirection: DirectionalSettings.Direction?
+    var centerPoint: NSPoint?
     
     init(settings: DirectionalSettings) {
         self.settings = settings
@@ -129,7 +145,7 @@ class DirectionalOverlayView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         
-        let center = NSPoint(x: bounds.midX, y: bounds.midY)
+        let center = centerPoint ?? NSPoint(x: bounds.midX, y: bounds.midY)
         let radius: CGFloat = 100
         let selectedRadius: CGFloat = 120
         
