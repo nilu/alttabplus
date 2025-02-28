@@ -25,7 +25,14 @@ class DirectionalOverlay {
     }
     
     func show() {
-        overlayWindows.values.forEach { $0.orderFront(nil) }
+        // Hide all windows first
+        overlayWindows.values.forEach { $0.orderOut(nil) }
+        
+        // Only show the window for the screen containing the mouse
+        let mouseLocation = NSEvent.mouseLocation
+        if let activeScreen = NSScreen.screens.first(where: { NSMouseInRect(mouseLocation, $0.frame, false) }) {
+            overlayWindows[activeScreen]?.orderFront(nil)
+        }
     }
     
     func hide() {
