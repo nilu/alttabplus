@@ -114,16 +114,20 @@ class DirectionalOverlay: NSWindow {
     }
     
     func updatePosition(to mouseLocation: NSPoint) {
-        guard let overlayView = contentView as? DirectionalOverlayView else { return }
-        overlayView.centerPoint = mouseLocation
+        guard let overlayView = contentView as? DirectionalOverlayView,
+              let window = overlayView.window else { return }
+        
+        // Convert screen coordinates to window coordinates
+        let windowPoint = window.convertPoint(fromScreen: mouseLocation)
+        overlayView.centerPoint = windowPoint
         overlayView.needsDisplay = true
         
-        // Update direction views positions
+        // Update direction views positions using the converted point
         let radius: CGFloat = 100
         for (direction, imageView) in directionViews {
             let angle = direction.angle * .pi / 180
-            let x = mouseLocation.x + radius * cos(CGFloat(angle))
-            let y = mouseLocation.y + radius * sin(CGFloat(angle))
+            let x = windowPoint.x + radius * cos(CGFloat(angle))
+            let y = windowPoint.y + radius * sin(CGFloat(angle))
             imageView.frame = NSRect(x: x - 25, y: y - 25, width: 50, height: 50)
         }
     }
