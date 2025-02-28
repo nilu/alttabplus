@@ -1,42 +1,85 @@
 import Cocoa
 
-class DirectionalOverlay: NSWindow {
+class DirectionalOverlay {
     private var settings: DirectionalSettings
-    private var selectedDirection: DirectionalSettings.Direction?
-    private var directionViews: [DirectionalSettings.Direction: NSImageView] = [:]
+    private var overlayWindows: [NSScreen: OverlayWindow] = [:]
     
     init(settings: DirectionalSettings) {
         self.settings = settings
-        self.selectedDirection = nil
+        createOverlayWindows()
+    }
+    
+    private func createOverlayWindows() {
+        // Clear existing windows
+        overlayWindows.removeAll()
         
-        // Create window spanning all screens
-        let screenFrame = NSScreen.screens.reduce(NSRect.zero) { union, screen in
-            union.union(screen.frame)
+        // Create a window for each screen
+        for (index, screen) in NSScreen.screens.enumerated() {
+            let window = OverlayWindow(
+                settings: settings,
+                screen: screen,
+                screenNumber: index + 1
+            )
+            overlayWindows[screen] = window
         }
+    }
+    
+    func show() {
+        overlayWindows.values.forEach { $0.orderFront(nil) }
+    }
+    
+    func hide() {
+        overlayWindows.values.forEach { $0.orderOut(nil) }
+    }
+    
+    func updateSelection(_ angle: Double?) {
+        overlayWindows.values.forEach { $0.updateSelection(angle) }
+    }
+    
+    func updateSettings(_ newSettings: DirectionalSettings) {
+        self.settings = newSettings
+        overlayWindows.values.forEach { $0.updateSettings(newSettings) }
+    }
+    
+    func updatePosition(to mouseLocation: NSPoint) {
+        // Only update the window for the screen containing the mouse
+        if let screen = NSScreen.screens.first(where: { NSMouseInRect(mouseLocation, $0.frame, false) }) {
+            overlayWindows[screen]?.updatePosition(to: mouseLocation)
+        }
+    }
+}
+
+// New class to represent each screen's overlay window
+class OverlayWindow: NSWindow {
+    private var settings: DirectionalSettings
+    private var selectedDirection: DirectionalSettings.Direction?
+    private var directionViews: [DirectionalSettings.Direction: NSImageView] = [:]
+    private let screenNumber: Int
+    
+    init(settings: DirectionalSettings, screen: NSScreen, screenNumber: Int) {
+        self.settings = settings
+        self.screenNumber = screenNumber
         
         super.init(
-            contentRect: screenFrame,
+            contentRect: screen.frame,
             styleMask: [.borderless],
             backing: .buffered,
             defer: false
         )
         
         // Configure window properties
-        level = .floating
-        backgroundColor = .clear
-        isOpaque = false
-        hasShadow = false
-        ignoresMouseEvents = true
+        self.level = .floating
+        self.backgroundColor = .clear
+        self.isOpaque = false
+        self.hasShadow = false
+        self.ignoresMouseEvents = true
         
         // Set up the content view
-        let overlayView = DirectionalOverlayView(settings: settings)
-        contentView = overlayView
+        let overlayView = DirectionalOverlayView(settings: settings, screenNumber: screenNumber)
+        self.contentView = overlayView
         
         // Create image views for each direction
         setupDirectionViews(in: overlayView)
-        
-        // Load all icons immediately
-        updateAllIcons()
     }
     
     private func setupDirectionViews(in overlayView: DirectionalOverlayView) {
@@ -53,17 +96,6 @@ class DirectionalOverlay: NSWindow {
             overlayView.addSubview(imageView)
             directionViews[direction] = imageView
         }
-    }
-    
-    func show() {
-        orderFront(nil)
-        selectedDirection = nil
-        updateSelection(nil)
-        updateAllIcons()
-    }
-    
-    func hide() {
-        orderOut(nil)
     }
     
     func updateSelection(_ angle: Double?) {
@@ -84,32 +116,6 @@ class DirectionalOverlay: NSWindow {
         if let contentView = contentView as? DirectionalOverlayView {
             contentView.updateSettings(newSettings)
             contentView.needsDisplay = true
-            updateAllIcons()
-        }
-    }
-    
-    func updateAllIcons() {
-        for direction in DirectionalSettings.Direction.allCases {
-            if settings.mappings[direction] != nil {
-                updateDirectionIcon(direction)
-            }
-        }
-    }
-    
-    private func updateDirectionIcon(_ direction: DirectionalSettings.Direction) {
-        guard let directionView = directionViews[direction] else { return }
-        
-        if let mapping = settings.mappings[direction] {
-            // Try to get icon from running app first
-            if let app = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == mapping.bundleIdentifier }),
-               let icon = app.icon {
-                directionView.image = icon
-            } else if let icon = mapping.icon {
-                // Use stored icon if app isn't running
-                directionView.image = icon
-            }
-        } else {
-            directionView.image = nil
         }
     }
     
@@ -135,11 +141,13 @@ class DirectionalOverlay: NSWindow {
 
 class DirectionalOverlayView: NSView {
     private var settings: DirectionalSettings
+    private let screenNumber: Int
     var selectedDirection: DirectionalSettings.Direction?
     var centerPoint: NSPoint?
     
-    init(settings: DirectionalSettings) {
+    init(settings: DirectionalSettings, screenNumber: Int) {
         self.settings = settings
+        self.screenNumber = screenNumber
         super.init(frame: .zero)
         wantsLayer = true
         layer?.backgroundColor = NSColor.black.withAlphaComponent(0.3).cgColor
@@ -151,6 +159,16 @@ class DirectionalOverlayView: NSView {
     
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
+        
+        // Draw screen number
+        let attributes: [NSAttributedString.Key: Any] = [
+            .foregroundColor: NSColor.white,
+            .font: NSFont.systemFont(ofSize: 24, weight: .bold)
+        ]
+        let text = "Screen \(screenNumber)"
+        let size = text.size(withAttributes: attributes)
+        let point = NSPoint(x: 20, y: bounds.height - size.height - 20)
+        text.draw(at: point, withAttributes: attributes)
         
         let center = centerPoint ?? NSPoint(x: bounds.midX, y: bounds.midY)
         let innerRadius: CGFloat = 40  // Inner circle radius
