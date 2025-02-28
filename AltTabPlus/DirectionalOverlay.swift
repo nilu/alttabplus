@@ -9,10 +9,13 @@ class DirectionalOverlay: NSWindow {
         self.settings = settings
         self.selectedDirection = nil
         
-        // Create window spanning the entire screen
-        let screen = NSScreen.main ?? NSScreen.screens[0]
+        // Create window spanning all screens
+        let screenFrame = NSScreen.screens.reduce(NSRect.zero) { union, screen in
+            union.union(screen.frame)
+        }
+        
         super.init(
-            contentRect: screen.frame,
+            contentRect: screenFrame,
             styleMask: [.borderless],
             backing: .buffered,
             defer: false
