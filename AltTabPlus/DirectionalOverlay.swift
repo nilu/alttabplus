@@ -167,7 +167,8 @@ class DirectionalOverlayView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         
-        // Draw screen number
+        // Draw screen number (debug)
+        /*
         let attributes: [NSAttributedString.Key: Any] = [
             .foregroundColor: NSColor.white,
             .font: NSFont.systemFont(ofSize: 24, weight: .bold)
@@ -176,6 +177,7 @@ class DirectionalOverlayView: NSView {
         let size = text.size(withAttributes: attributes)
         let point = NSPoint(x: 20, y: bounds.height - size.height - 20)
         text.draw(at: point, withAttributes: attributes)
+        */
         
         let center = centerPoint ?? NSPoint(x: bounds.midX, y: bounds.midY)
         let innerRadius: CGFloat = 40  // Inner circle radius
