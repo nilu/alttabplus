@@ -8,6 +8,10 @@ A macOS application that enhances the Alt-Tab experience by allowing directional
 - Click and drag in any direction to select windows
 - Quick and intuitive window switching
 - Native macOS integration
+- Multi-monitor support with per-screen wheel overlay
+- Dynamic wheel positioning that follows your cursor
+- Smooth visual feedback with segment highlighting
+- App icon integration in the directional wheel
 
 ## Requirements
 
@@ -23,23 +27,37 @@ A macOS application that enhances the Alt-Tab experience by allowing directional
 ## Usage
 
 1. Hold the Alt (Option) key
-2. Click and drag in any direction to select a window
-3. Release to switch to the selected window
+2. The directional wheel appears centered on your cursor
+3. Click and drag in any direction to select a window
+4. Release to switch to the selected window
+5. When using multiple monitors, the wheel appears only on the screen where your cursor is
 
 ## Development
 
 This project is built using Swift and AppKit, utilizing macOS accessibility features for window management.
 
+## Patch Notes
+
+### Version 1.1
+- Added multi-monitor support
+- Improved wheel UI with smooth segment highlighting
+- Added dynamic cursor-centered positioning
+- Fixed screen coordinate conversion issues
+- Optimized wheel rendering performance
+- Added visual feedback for selected segments
+- Fine-tuned mouse tracking sensitivity
+
 ## TODO
-1. Create Xcode project structure ⏳
-2. Implement window selection logic in WindowManager.switchToWindow(at:)
-3. Add visual overlay to show available windows
-4. Add window preview thumbnails
-5. Fine-tune mouse tracking sensitivity
-6. Add unit tests
-7. Add keyboard shortcut customization
-8. Add window filtering options
-9. Implement window preview caching for better performance
+1. ✅ Create Xcode project structure
+2. ✅ Implement window selection logic in WindowManager.switchToWindow(at:)
+3. ✅ Add visual overlay to show available windows
+4. ✅ Add multi-monitor support
+5. ✅ Add window preview thumbnails
+6. ✅ Fine-tune mouse tracking sensitivity
+7. Add unit tests
+8. Add keyboard shortcut customization
+9. Add window filtering options
+10. Implement window preview caching for better performance
 
 ## Development Setup
 
