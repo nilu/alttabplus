@@ -41,14 +41,14 @@ class DirectionalOverlay: NSWindow {
     
     private func setupDirectionViews(in overlayView: DirectionalOverlayView) {
         let center = NSPoint(x: overlayView.bounds.midX, y: overlayView.bounds.midY)
-        let radius: CGFloat = 100
+        let radius: CGFloat = 80 // Adjusted to match new wheel size
         
         for direction in DirectionalSettings.Direction.allCases {
             let angle = direction.angle * .pi / 180
             let x = center.x + radius * cos(CGFloat(angle))
             let y = center.y + radius * sin(CGFloat(angle))
             
-            let imageView = NSImageView(frame: NSRect(x: x - 25, y: y - 25, width: 50, height: 50))
+            let imageView = NSImageView(frame: NSRect(x: x - 16, y: y - 16, width: 32, height: 32))
             imageView.imageScaling = .scaleProportionallyUpOrDown
             overlayView.addSubview(imageView)
             directionViews[direction] = imageView
@@ -149,37 +149,76 @@ class DirectionalOverlayView: NSView {
         super.draw(dirtyRect)
         
         let center = centerPoint ?? NSPoint(x: bounds.midX, y: bounds.midY)
-        let radius: CGFloat = 100
-        let selectedRadius: CGFloat = 120
+        let innerRadius: CGFloat = 40  // Inner circle radius
+        let outerRadius: CGFloat = 120 // Outer radius for segments
+        let selectedOuterRadius: CGFloat = 140 // Expanded radius for selected segment
         
-        // Draw the wheel segments
+        // Draw dark semi-transparent background circle
+        let bgPath = NSBezierPath(ovalIn: NSRect(
+            x: center.x - outerRadius,
+            y: center.y - outerRadius,
+            width: outerRadius * 2,
+            height: outerRadius * 2
+        ))
+        NSColor.black.withAlphaComponent(0.7).setFill()
+        bgPath.fill()
+        
+        // Draw inner circle
+        let innerCirclePath = NSBezierPath(ovalIn: NSRect(
+            x: center.x - innerRadius,
+            y: center.y - innerRadius,
+            width: innerRadius * 2,
+            height: innerRadius * 2
+        ))
+        NSColor.black.withAlphaComponent(0.8).setFill()
+        innerCirclePath.fill()
+        
+        // Draw the segments
         for direction in DirectionalSettings.Direction.allCases {
-            let angle = direction.angle * .pi / 180
             let isSelected = direction == selectedDirection
+            let startAngle = direction.angle - 22.5 // Half of 45 degrees
+            let endAngle = direction.angle + 22.5
+            let radius = isSelected ? selectedOuterRadius : outerRadius
             
-            // Calculate segment position
-            let segmentRadius = isSelected ? selectedRadius : radius
-            let x = center.x + segmentRadius * cos(CGFloat(angle))
-            let y = center.y + segmentRadius * sin(CGFloat(angle))
+            // Create segment path
+            let segmentPath = NSBezierPath()
+            segmentPath.move(to: center)
+            segmentPath.appendArc(
+                withCenter: center,
+                radius: radius,
+                startAngle: startAngle,
+                endAngle: endAngle,
+                clockwise: false
+            )
+            segmentPath.close()
             
-            let segmentRect = NSRect(x: x - 25, y: y - 25, width: 50, height: 50)
-            
-            // Draw segment background
-            let bgPath = NSBezierPath(ovalIn: segmentRect)
+            // Set segment color
             if isSelected {
                 NSColor.white.withAlphaComponent(0.3).setFill()
+                NSColor.white.withAlphaComponent(0.6).setStroke()
             } else {
-                NSColor.black.withAlphaComponent(0.5).setFill()
+                NSColor.white.withAlphaComponent(0.1).setFill()
+                NSColor.white.withAlphaComponent(0.2).setStroke()
             }
-            bgPath.fill()
+            
+            segmentPath.fill()
+            segmentPath.lineWidth = 1
+            segmentPath.stroke()
             
             // Draw app icon if mapped
             if let mapping = settings.mappings[direction] {
+                let iconSize: CGFloat = 32
+                let iconDistance = (radius + innerRadius) / 2
+                let iconAngle = direction.angle * .pi / 180
+                let iconX = center.x + iconDistance * cos(CGFloat(iconAngle)) - iconSize/2
+                let iconY = center.y + iconDistance * sin(CGFloat(iconAngle)) - iconSize/2
+                let iconRect = NSRect(x: iconX, y: iconY, width: iconSize, height: iconSize)
+                
                 if let app = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == mapping.bundleIdentifier }),
                    let icon = app.icon {
-                    icon.draw(in: segmentRect)
+                    icon.draw(in: iconRect)
                 } else if let icon = mapping.icon {
-                    icon.draw(in: segmentRect)
+                    icon.draw(in: iconRect)
                 }
             }
         }
